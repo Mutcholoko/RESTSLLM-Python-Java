@@ -86,17 +86,25 @@ If you use **RestTSLLM** in your research or project, please cite:
 
 ```bibtex
 @inproceedings{barradas2025resttsllm,
-  author    = {Thiago Barradas and Aline Paes and Vânia de Oliveira Neves},
-  title     = {Combining TSL and LLM to Automate REST API Testing: A Comparative Study},
-  booktitle = {Proceedings of the XXXIX Brazilian Symposium on Software Engineering (SBES)},
-  year      = {2025},
-  note      = {To appear}
-} 
+ author = {{Barradas}, Thiago and {Paes}, Aline and {Neves}, Vania},
+ title = {Combining TSL and LLM to Automate REST API Testing: A Comparative Study},
+ booktitle = {Proceedings of the 39th Brazilian Symposium on Software Engineering (SBES)},
+ location = {Recife/PE},
+ year = {2025},
+ keywords = {Test Automation, Large Language Models, Integration Testing, REST API Testing, AI in Software Testing, Test Generation},
+ issn = {2833-0633},
+ pages = {71--81},
+ publisher = {SBC},
+ address = {Porto Alegre, RS, Brasil},
+ doi = {10.5753/sbes.2025.9670},
+ url = {https://sol.sbc.org.br/index.php/sbes/article/view/36987}
+}
 ```
 
 **Text citation format:**
 
 ```
-Barradas, T., Paes, A., & Neves, V. O. (2025). Combining TSL and LLM to Automate REST API Testing: A Comparative Study. In: Proceedings of the XXXIX Brazilian Symposium on Software Engineering (SBES). To appear.
+Barradas, T., Paes, A., & Neves, V. O. (2025). Combining TSL and LLM to Automate REST API Testing: A Comparative Study. In Proceedings of
+the 39th Brazilian Symposium on Software Engineering (SBES) (Recife/PE). SBC, Porto Alegre, RS, Brasil, 71–81. doi:10.5753/sbes.2025.9670
 ```
 

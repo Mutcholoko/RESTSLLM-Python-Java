@@ -1,0 +1,478 @@
+Agora vou te ensinar boas práticas na conversão de um TSL para testes de integração com Java (REST Assured).
+
+Dado o TSL fornecido anteriormente, uma conversão para testes de integração com Java (REST Assured) deveria gerar:
+
+```java
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import org.junit.jupiter.api.*;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+public class PeopleManagementIT {
+
+    @BeforeAll
+    public static void setup() {
+        RestAssured.baseURI = "http://localhost:8080";
+    }
+
+    private String createUser(String nickname, String password) {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\":\"" + nickname + "\",\"password\":\"" + password + "\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(anyOf(is(200), is(400)));
+        return nickname;
+    }
+
+    private String getToken(String nickname, String password) {
+        return given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\":\"" + nickname + "\",\"password\":\"" + password + "\"}")
+        .when()
+            .post("/users/token")
+        .then()
+            .extract()
+            .path("token");
+    }
+
+    private Response createPerson(String token, String name, Object age) {
+        return given()
+            .contentType(ContentType.JSON)
+            .header("Authorization", token != null ? "Bearer " + token : null)
+            .body("{\"name\": " + (name == null ? null : "\"" + name + "\"") + ", \"age\": " + age + "}")
+        .when()
+            .post("/people");
+    }
+
+    private Response getPerson(String token, int id) {
+        return given()
+            .header("Authorization", token != null ? "Bearer " + token : null)
+        .when()
+            .get("/people/" + id);
+    }
+
+    // ==================== USERS ====================
+
+    @Test @Order(1)
+    public void TC001_CreateUser_ValidData_ReturnsOK() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"validNickname1\", \"password\": \"ValidPass1\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(200);
+    }
+
+    @Test @Order(2)
+    public void TC002_CreateUser_NicknameAlreadyExists_ReturnsBadRequest() {
+        String nickname = "existingNick";
+        String password = "ValidPass1";
+        createUser(nickname, password);
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"" + nickname + "\", \"password\": \"" + password + "\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test @Order(3)
+    public void TC003_CreateUser_InvalidNicknameFormat_ReturnsBadRequest() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"invalid!Nick\", \"password\": \"ValidPass1\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test @Order(4)
+    public void TC004_CreateUser_NicknameNull_ReturnsBadRequest() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": null, \"password\": \"ValidPass1\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test @Order(5)
+    public void TC005_CreateUser_NicknameEmpty_ReturnsBadRequest() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"\", \"password\": \"ValidPass1\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test @Order(6)
+    public void TC006_CreateUser_NicknameTooShort_ReturnsBadRequest() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"invalidNi\", \"password\": \"ValidPass1\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test @Order(7)
+    public void TC007_CreateUser_NicknameTooLong_ReturnsBadRequest() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"validNick1abcabcabcdabcabcabcd123\", \"password\": \"ValidPass1\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test @Order(8)
+    public void TC008_CreateUser_MinSizeNickname_ReturnsOK() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"validNick0\", \"password\": \"ValidPass1\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(200);
+    }
+
+    @Test @Order(9)
+    public void TC009_CreateUser_MaxSizeNickname_ReturnsOK() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"validNick1abcabcabcdabcabcabcd12\", \"password\": \"ValidPass1\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(200);
+    }
+
+    @Test @Order(10)
+    public void TC010_CreateUser_PasswordNull_ReturnsBadRequest() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"validNick1\", \"password\": null}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test @Order(11)
+    public void TC011_CreateUser_PasswordEmpty_ReturnsBadRequest() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"validNick2\", \"password\": \"\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test @Order(12)
+    public void TC012_CreateUser_PasswordTooShort_ReturnsBadRequest() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"validNick3\", \"password\": \"Abcd1\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test @Order(13)
+    public void TC013_CreateUser_PasswordTooLong_ReturnsBadRequest() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"validNick4\", \"password\": \"Ab1Abc2bc2bc2bc2bc2bc\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test @Order(14)
+    public void TC014_CreateUser_PasswordMinSize_ReturnsOK() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"validNick5\", \"password\": \"Abcde1\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(200);
+    }
+
+    @Test @Order(15)
+    public void TC015_CreateUser_PasswordMaxSize_ReturnsOK() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"validNick6\", \"password\": \"Ab1Abc2bc2bc2bc2bc2b\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(200);
+    }
+
+    @Test @Order(16)
+    public void TC016_CreateUser_PasswordMissingUppercase_ReturnsBadRequest() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"validNick7\", \"password\": \"validpass1\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test @Order(17)
+    public void TC017_CreateUser_PasswordMissingLowercase_ReturnsBadRequest() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"validNick8\", \"password\": \"VALIDPASS1\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test @Order(18)
+    public void TC018_CreateUser_PasswordMissingDigit_ReturnsBadRequest() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"validNick9\", \"password\": \"ValidPassX\"}")
+        .when()
+            .post("/users")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test @Order(19)
+    public void TC019_AuthenticateUser_ValidData_ReturnsOK() {
+        String nickname = "validNick10";
+        String password = "ValidPass1";
+        createUser(nickname, password);
+
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"" + nickname + "\", \"password\": \"" + password + "\"}")
+        .when()
+            .post("/users/token")
+        .then()
+            .statusCode(200)
+            .body("token", not(isEmptyString()));
+    }
+
+    @Test @Order(20)
+    public void TC020_AuthenticateUser_InvalidPassword_ReturnsBadRequest() {
+        String nickname = "validNick11";
+        String password = "ValidPass1";
+        createUser(nickname, password);
+
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"" + nickname + "\", \"password\": \"WrongPass1\"}")
+        .when()
+            .post("/users/token")
+        .then()
+            .statusCode(400);
+    }
+
+    @Test @Order(21)
+    public void TC021_AuthenticateUser_InvalidNickname_ReturnsBadRequest() {
+        String nickname = "validNick12";
+        String password = "ValidPass1";
+        createUser(nickname, password);
+
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"nickname\": \"validNickname12\", \"password\": \"" + password + "\"}")
+        .when()
+            .post("/users/token")
+        .then()
+            .statusCode(400);
+    }
+
+    // ==================== PEOPLE ====================
+
+    @Test @Order(22)
+    public void TC022_CreatePerson_ValidData_ReturnsCreated() {
+        String token = getToken(createUser("validNick13", "ValidPass1"), "ValidPass1");
+        Response response = createPerson(token, "John Doe", 30);
+        response.then()
+            .statusCode(201)
+            .body("id", greaterThan(0))
+            .body("name", equalTo("John Doe"))
+            .body("age", equalTo(30));
+    }
+
+    @Test @Order(23)
+    public void TC023_CreatePerson_NameNull_ReturnsBadRequest() {
+        String token = getToken(createUser("validNick14", "ValidPass1"), "ValidPass1");
+        createPerson(token, null, 30).then().statusCode(400);
+    }
+
+    @Test @Order(24)
+    public void TC024_CreatePerson_NameEmpty_ReturnsBadRequest() {
+        String token = getToken(createUser("validNick15", "ValidPass1"), "ValidPass1");
+        createPerson(token, "", 30).then().statusCode(400);
+    }
+
+    @Test @Order(25)
+    public void TC025_CreatePerson_NameTooShort_ReturnsBadRequest() {
+        String token = getToken(createUser("validNick16", "ValidPass1"), "ValidPass1");
+        createPerson(token, "", 30).then().statusCode(400);
+    }
+
+    @Test @Order(26)
+    public void TC026_CreatePerson_NameTooLong_ReturnsBadRequest() {
+        String token = getToken(createUser("validNick17", "ValidPass1"), "ValidPass1");
+        createPerson(token,
+            "John Doe abcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcg", 30)
+            .then().statusCode(400);
+    }
+
+    @Test @Order(27)
+    public void TC027_CreatePerson_MinName_ReturnsCreated() {
+        String token = getToken(createUser("validNick18", "ValidPass1"), "ValidPass1");
+        createPerson(token, "J", 30)
+            .then()
+            .statusCode(201)
+            .body("id", greaterThan(0))
+            .body("name", equalTo("J"))
+            .body("age", equalTo(30));
+    }
+
+    @Test @Order(28)
+    public void TC028_CreatePerson_MaxName_ReturnsCreated() {
+        String token = getToken(createUser("validNick19", "ValidPass1"), "ValidPass1");
+        String longName = "John Doeabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcgabcabcabcg";
+        createPerson(token, longName, 30)
+            .then()
+            .statusCode(201)
+            .body("id", greaterThan(0))
+            .body("name", equalTo(longName))
+            .body("age", equalTo(30));
+    }
+
+    @Test @Order(29)
+    public void TC029_CreatePerson_AgeNull_ReturnsBadRequest() {
+        String token = getToken(createUser("validNick20", "ValidPass1"), "ValidPass1");
+        createPerson(token, "John Doe", null).then().statusCode(400);
+    }
+
+    @Test @Order(30)
+    public void TC030_CreatePerson_AgeBelowMin_ReturnsBadRequest() {
+        String token = getToken(createUser("validNick21", "ValidPass1"), "ValidPass1");
+        createPerson(token, "John Doe", -1).then().statusCode(400);
+    }
+
+    @Test @Order(31)
+    public void TC031_CreatePerson_AgeAboveMax_ReturnsBadRequest() {
+        String token = getToken(createUser("validNick22", "ValidPass1"), "ValidPass1");
+        createPerson(token, "John Doe", 151).then().statusCode(400);
+    }
+
+    @Test @Order(32)
+    public void TC032_CreatePerson_AgeMin_ReturnsCreated() {
+        String token = getToken(createUser("validNick23", "ValidPass1"), "ValidPass1");
+        createPerson(token, "John Doe", 0)
+            .then()
+            .statusCode(201)
+            .body("age", equalTo(0));
+    }
+
+    @Test @Order(33)
+    public void TC033_CreatePerson_AgeMax_ReturnsCreated() {
+        String token = getToken(createUser("validNick24", "ValidPass1"), "ValidPass1");
+        createPerson(token, "John Doe", 150)
+            .then()
+            .statusCode(201)
+            .body("age", equalTo(150));
+    }
+
+    @Test @Order(34)
+    public void TC034_CreatePerson_InvalidToken_ReturnsUnauthorized() {
+        createPerson("invalidtoken", "John Doe", 30).then().statusCode(401);
+    }
+
+    @Test @Order(35)
+    public void TC035_CreatePerson_WithoutToken_ReturnsUnauthorized() {
+        createPerson(null, "John Doe", 30).then().statusCode(401);
+    }
+
+    @Test @Order(36)
+    public void TC036_GetPerson_ValidData_ReturnsOK() {
+        String token = getToken(createUser("validNick25", "ValidPass1"), "ValidPass1");
+        int id = createPerson(token, "John Doe", 30).then().extract().path("id");
+        getPerson(token, id)
+            .then()
+            .statusCode(200)
+            .body("id", equalTo(id))
+            .body("name", equalTo("John Doe"))
+            .body("age", equalTo(30));
+    }
+
+    @Test @Order(37)
+    public void TC037_GetPerson_IdNotExists_ReturnsNotFound() {
+        String token = getToken(createUser("validNick26", "ValidPass1"), "ValidPass1");
+        getPerson(token, 9999999).then().statusCode(404);
+    }
+
+    @Test @Order(38)
+    public void TC038_GetPerson_InvalidToken_ReturnsUnauthorized() {
+        getPerson("invalidtoken", 1).then().statusCode(401);
+    }
+
+    @Test @Order(39)
+    public void TC039_GetPerson_WithoutToken_ReturnsUnauthorized() {
+        getPerson(null, 1).then().statusCode(401);
+    }
+
+    @Test @Order(40)
+    public void TC040_GetPerson_TokenFromOtherUser_ReturnsNotFound() {
+        String token1 = getToken(createUser("validNick27", "ValidPass1"), "ValidPass1");
+        int id = createPerson(token1, "John Doe", 30).then().extract().path("id");
+        String token2 = getToken(createUser("validNick28", "ValidPass1"), "ValidPass1");
+        getPerson(token2, id).then().statusCode(404);
+    }
+
+    // ==================== APP ====================
+
+    @Test @Order(41)
+    public void TC041_UpdateAppLogo_ValidContentType_ReturnsOK() {
+        given()
+            .multiPart("file", new java.io.File("src/test/resources/somefile.jpg"))
+        .when()
+            .put("/app/logo")
+        .then()
+            .statusCode(200);
+    }
+
+    @Test @Order(42)
+    public void TC042_UpdateAppLogo_InvalidContentType_ReturnsUnsupportedMediaType() {
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"file\": \"somefile.jpg\"}")
+        .when()
+            .put("/app/logo")
+        .then()
+            .statusCode(415);
+    }
+}
+
+```
+
+Responda apenas "OK" se entendeu.

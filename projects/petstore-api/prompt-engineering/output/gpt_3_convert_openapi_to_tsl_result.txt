@@ -1,0 +1,88 @@
+```yaml
+TestGroups:
+  - groupName: PetEndpointTests
+    parameters:
+      - name: petId
+        type: integer
+        values:
+          - 10 # valid ID
+          - -1 # invalid ID
+          - null # missing ID
+      - name: name
+        type: string
+        values:
+          - "doggie" # valid name
+          - "" # empty name
+          - null # missing name
+      - name: status
+        type: string
+        values:
+          - "available" # valid status
+          - "pending" # valid status
+          - "sold" # valid status
+          - "invalidStatus" # invalid status
+          - null # missing status
+  - groupName: UserEndpointTests
+    parameters:
+      - name: username
+        type: string
+        values:
+          - "validUser" # valid username
+          - "" # empty username
+          - null # missing username
+      - name: password
+        type: string
+        values:
+          - "validPassword" # valid password
+          - "" # empty password
+          - null # missing password
+  - groupName: OrderEndpointTests
+    parameters:
+      - name: orderId
+        type: integer
+        values:
+          - 5 # valid ID within range
+          - 1001 # invalid ID above range
+          - 0 # boundary case
+          - -1 # invalid negative ID
+          - null # missing ID
+      - name: status
+        type: string
+        values:
+          - "placed" # valid status
+          - "approved" # valid status
+          - "delivered" # valid status
+          - "invalidStatus" # invalid status
+          - null # missing status
+
+Classifications:
+  - groupName: PetEndpointTests
+    partitions:
+      - criteria: [petId]
+      - criteria: [name]
+      - criteria: [status]
+  - groupName: UserEndpointTests
+    partitions:
+      - criteria: [username, password]
+  - groupName: OrderEndpointTests
+    partitions:
+      - criteria: [orderId]
+      - criteria: [status]
+
+TestCases:
+  - groupName: PetEndpointTests
+    cases:
+      - parameters: [10, "doggie", "available"]
+      - parameters: [-1, "", "invalidStatus"]
+      - parameters: [null, null, null]
+  - groupName: UserEndpointTests
+    cases:
+      - parameters: ["validUser", "validPassword"]
+      - parameters: ["", ""]
+      - parameters: [null, null]
+  - groupName: OrderEndpointTests
+    cases:
+      - parameters: [5, "placed"]
+      - parameters: [1001, "invalidStatus"]
+      - parameters: [null, null]
+```

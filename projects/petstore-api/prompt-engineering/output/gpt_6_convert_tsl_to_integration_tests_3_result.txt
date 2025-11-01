@@ -1,0 +1,256 @@
+```java
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import org.junit.jupiter.api.Test;
+
+import java.util.UUID;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+
+public class UserEndpointTests {
+
+    static {
+        RestAssured.baseURI = "https://petstore3.swagger.io/api/v3";
+    }
+
+    private String createUser(String username, String password) {
+        String userPayload = """
+            {
+                "username": "%s",
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john.doe@example.com",
+                "password": "%s",
+                "phone": "123456789",
+                "userStatus": 1
+            }
+        """.formatted(username, password);
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(userPayload)
+                .post("/user");
+        response.then().statusCode(200);
+
+        return username;
+    }
+
+    private void deleteUser(String username) {
+        given()
+                .delete("/user/" + username)
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    public void testCreateUser_validInputs() {
+        // Arrange
+        String uniqueUsername = "user_" + UUID.randomUUID();
+        String password = "validPassword";
+
+        String userPayload = """
+            {
+                "username": "%s",
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john.doe@example.com",
+                "password": "%s",
+                "phone": "123456789",
+                "userStatus": 1
+            }
+        """.formatted(uniqueUsername, password);
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(userPayload)
+                .post("/user");
+
+        // Assert
+        response.then().statusCode(200);
+
+        // Cleanup
+        deleteUser(uniqueUsername);
+    }
+
+    @Test
+    public void testCreateUser_emptyUsername() {
+        // Arrange
+        String password = "validPassword";
+
+        String userPayload = """
+            {
+                "username": "",
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john.doe@example.com",
+                "password": "%s",
+                "phone": "123456789",
+                "userStatus": 1
+            }
+        """.formatted(password);
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(userPayload)
+                .post("/user");
+
+        // Assert
+        response.then().statusCode(400);
+    }
+
+    @Test
+    public void testCreateUser_nullUsername() {
+        // Arrange
+        String password = "validPassword";
+
+        String userPayload = """
+            {
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john.doe@example.com",
+                "password": "%s",
+                "phone": "123456789",
+                "userStatus": 1
+            }
+        """.formatted(password);
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(userPayload)
+                .post("/user");
+
+        // Assert
+        response.then().statusCode(400);
+    }
+
+    @Test
+    public void testCreateUser_emptyPassword() {
+        // Arrange
+        String uniqueUsername = "user_" + UUID.randomUUID();
+
+        String userPayload = """
+            {
+                "username": "%s",
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john.doe@example.com",
+                "password": "",
+                "phone": "123456789",
+                "userStatus": 1
+            }
+        """.formatted(uniqueUsername);
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(userPayload)
+                .post("/user");
+
+        // Assert
+        response.then().statusCode(400);
+    }
+
+    @Test
+    public void testCreateUser_nullPassword() {
+        // Arrange
+        String uniqueUsername = "user_" + UUID.randomUUID();
+
+        String userPayload = """
+            {
+                "username": "%s",
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john.doe@example.com",
+                "phone": "123456789",
+                "userStatus": 1
+            }
+        """.formatted(uniqueUsername);
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(userPayload)
+                .post("/user");
+
+        // Assert
+        response.then().statusCode(400);
+    }
+
+    @Test
+    public void testGetUser_validUsername() {
+        // Arrange
+        String uniqueUsername = "user_" + UUID.randomUUID();
+        String password = "validPassword";
+        createUser(uniqueUsername, password);
+
+        // Act
+        Response response = given()
+                .get("/user/" + uniqueUsername);
+
+        // Assert
+        response.then()
+                .statusCode(200)
+                .body("username", equalTo(uniqueUsername));
+
+        // Cleanup
+        deleteUser(uniqueUsername);
+    }
+
+    @Test
+    public void testGetUser_invalidUsername() {
+        // Arrange
+        String invalidUsername = "invalid_user";
+
+        // Act
+        Response response = given()
+                .get("/user/" + invalidUsername);
+
+        // Assert
+        response.then().statusCode(404);
+    }
+
+    @Test
+    public void testGetUser_emptyUsername() {
+        // Act
+        Response response = given()
+                .get("/user/");
+
+        // Assert
+        response.then().statusCode(405);
+    }
+
+    @Test
+    public void testDeleteUser_validUsername() {
+        // Arrange
+        String uniqueUsername = "user_" + UUID.randomUUID();
+        String password = "validPassword";
+        createUser(uniqueUsername, password);
+
+        // Act
+        Response response = given()
+                .delete("/user/" + uniqueUsername);
+
+        // Assert
+        response.then().statusCode(200);
+    }
+
+    @Test
+    public void testDeleteUser_invalidUsername() {
+        // Arrange
+        String invalidUsername = "invalid_user";
+
+        // Act
+        Response response = given()
+                .delete("/user/" + invalidUsername);
+
+        // Assert
+        response.then().statusCode(404);
+    }
+}
+```

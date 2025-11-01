@@ -1,0 +1,208 @@
+```java
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import org.junit.jupiter.api.Test;
+
+import java.util.UUID;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+
+public class StoreEndpointTests {
+
+    static {
+        RestAssured.baseURI = "https://petstore3.swagger.io/api/v3";
+    }
+
+    private String createOrder(int petId, int quantity, String status) {
+        String orderPayload = """
+            {
+                "petId": %d,
+                "quantity": %d,
+                "status": "%s",
+                "complete": true
+            }
+        """.formatted(petId, quantity, status);
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(orderPayload)
+                .post("/store/order");
+        response.then()
+                .statusCode(200)
+                .body("id", notNullValue());
+
+        return response.jsonPath().getString("id");
+    }
+
+    private void deleteOrder(String orderId) {
+        given()
+                .delete("/store/order/" + orderId)
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    public void testCreateOrder_validInputs() {
+        // Arrange
+        int petId = 123; // Placeholder pet ID for valid input
+        int quantity = 5;
+        String status = "placed";
+
+        String orderPayload = """
+            {
+                "petId": %d,
+                "quantity": %d,
+                "status": "%s",
+                "complete": true
+            }
+        """.formatted(petId, quantity, status);
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(orderPayload)
+                .post("/store/order");
+
+        // Assert
+        String orderId = response.then()
+                .statusCode(200)
+                .body("petId", equalTo(petId))
+                .body("quantity", equalTo(quantity))
+                .body("status", equalTo(status))
+                .extract()
+                .path("id");
+
+        // Cleanup
+        deleteOrder(orderId);
+    }
+
+    @Test
+    public void testGetOrder_validOrderId() {
+        // Arrange
+        int petId = 123; // Placeholder pet ID
+        int quantity = 2;
+        String status = "approved";
+        String orderId = createOrder(petId, quantity, status);
+
+        // Act
+        Response response = given()
+                .get("/store/order/" + orderId);
+
+        // Assert
+        response.then()
+                .statusCode(200)
+                .body("id", equalTo(Integer.parseInt(orderId)))
+                .body("status", equalTo(status));
+
+        // Cleanup
+        deleteOrder(orderId);
+    }
+
+    @Test
+    public void testGetOrder_invalidOrderId() {
+        // Arrange
+        String invalidOrderId = "9999"; // Non-existing order ID
+
+        // Act
+        Response response = given()
+                .get("/store/order/" + invalidOrderId);
+
+        // Assert
+        response.then().statusCode(404);
+    }
+
+    @Test
+    public void testDeleteOrder_validOrderId() {
+        // Arrange
+        int petId = 456; // Placeholder pet ID
+        int quantity = 1;
+        String status = "delivered";
+        String orderId = createOrder(petId, quantity, status);
+
+        // Act
+        Response response = given()
+                .delete("/store/order/" + orderId);
+
+        // Assert
+        response.then().statusCode(200);
+    }
+
+    @Test
+    public void testDeleteOrder_invalidOrderId() {
+        // Arrange
+        String invalidOrderId = "10000"; // Non-existing order ID
+
+        // Act
+        Response response = given()
+                .delete("/store/order/" + invalidOrderId);
+
+        // Assert
+        response.then().statusCode(404);
+    }
+
+    @Test
+    public void testGetInventory() {
+        // Act
+        Response response = given()
+                .get("/store/inventory");
+
+        // Assert
+        response.then()
+                .statusCode(200)
+                .body(notNullValue());
+    }
+
+    @Test
+    public void testPlaceOrder_invalidQuantity() {
+        // Arrange
+        int petId = 789; // Placeholder pet ID
+        int invalidQuantity = -1; // Invalid negative quantity
+        String status = "placed";
+
+        String orderPayload = """
+            {
+                "petId": %d,
+                "quantity": %d,
+                "status": "%s",
+                "complete": true
+            }
+        """.formatted(petId, invalidQuantity, status);
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(orderPayload)
+                .post("/store/order");
+
+        // Assert
+        response.then().statusCode(400);
+    }
+
+    @Test
+    public void testPlaceOrder_nullStatus() {
+        // Arrange
+        int petId = 789; // Placeholder pet ID
+        int quantity = 1;
+
+        String orderPayload = """
+            {
+                "petId": %d,
+                "quantity": %d,
+                "complete": true
+            }
+        """.formatted(petId, quantity);
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(orderPayload)
+                .post("/store/order");
+
+        // Assert
+        response.then().statusCode(400);
+    }
+}
+```

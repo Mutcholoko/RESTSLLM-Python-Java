@@ -1,0 +1,136 @@
+```yaml
+TestCases:
+  - MainEndpoint:
+      Categories:
+        - Response:
+            Choices:
+              - Successful: 200
+  - ListAuthors:
+      Categories:
+        - Response:
+            Choices:
+              - Successful: 200
+  - CreateAuthor:
+      Categories:
+        - Input:
+            Choices:
+              - ValidName: "string"
+              - EmptyName: ""
+            BoundaryValues:
+              - MaxLengthName: "x" * 255
+              - MinLengthName: "x"
+        - Response:
+            Choices:
+              - Successful: 200
+              - ValidationError: 422
+  - GetAuthorById:
+      Categories:
+        - PathParameter:
+            Choices:
+              - ValidId: 1
+              - NegativeId: -1
+              - ZeroId: 0
+              - NonIntegerId: "abc"
+        - Response:
+            Choices:
+              - Successful: 200
+              - ValidationError: 422
+  - UpdateAuthor:
+      Categories:
+        - PathParameter:
+            Choices:
+              - ValidId: 1
+              - NegativeId: -1
+              - ZeroId: 0
+              - NonIntegerId: "abc"
+        - Input:
+            Choices:
+              - ValidName: "string"
+              - EmptyName: ""
+            BoundaryValues:
+              - MaxLengthName: "x" * 255
+              - MinLengthName: "x"
+        - Response:
+            Choices:
+              - Successful: 200
+              - ValidationError: 422
+  - DeleteAuthor:
+      Categories:
+        - PathParameter:
+            Choices:
+              - ValidId: 1
+              - NegativeId: -1
+              - ZeroId: 0
+              - NonIntegerId: "abc"
+        - Response:
+            Choices:
+              - Successful: 204
+              - ValidationError: 422
+  - ListBooks:
+      Categories:
+        - QueryParameter:
+            Choices:
+              - AuthorIdValid: "1"
+              - AuthorIdEmpty: ""
+              - AuthorIdNonInteger: "abc"
+        - Response:
+            Choices:
+              - Successful: 200
+              - ValidationError: 422
+  - CreateBook:
+      Categories:
+        - Input:
+            Choices:
+              - ValidNameAuthorId: {"name": "string", "author_id": 1}
+              - EmptyNameAuthorId: {"name": "", "author_id": ""}
+            BoundaryValues:
+              - MaxLengthName: {"name": "x" * 255, "author_id": 1}
+              - MinLengthName: {"name": "x", "author_id": 1}
+        - Response:
+            Choices:
+              - Successful: 200
+              - ValidationError: 422
+  - GetBookById:
+      Categories:
+        - PathParameter:
+            Choices:
+              - ValidId: 1
+              - NegativeId: -1
+              - ZeroId: 0
+              - NonIntegerId: "abc"
+        - Response:
+            Choices:
+              - Successful: 200
+              - ValidationError: 422
+  - UpdateBook:
+      Categories:
+        - PathParameter:
+            Choices:
+              - ValidId: 1
+              - NegativeId: -1
+              - ZeroId: 0
+              - NonIntegerId: "abc"
+        - Input:
+            Choices:
+              - ValidNameAuthorId: {"name": "string", "author_id": 1}
+              - EmptyNameAuthorId: {"name": "", "author_id": ""}
+            BoundaryValues:
+              - MaxLengthName: {"name": "x" * 255, "author_id": 1}
+              - MinLengthName: {"name": "x", "author_id": 1}
+        - Response:
+            Choices:
+              - Successful: 200
+              - ValidationError: 422
+  - DeleteBook:
+      Categories:
+        - PathParameter:
+            Choices:
+              - ValidId: 1
+              - NegativeId: -1
+              - ZeroId: 0
+              - NonIntegerId: "abc"
+        - Response:
+            Choices:
+              - Successful: 204
+              - ValidationError: 422
+```

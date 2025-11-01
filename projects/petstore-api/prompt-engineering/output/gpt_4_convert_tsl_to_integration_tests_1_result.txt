@@ -1,0 +1,224 @@
+```java
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import org.junit.jupiter.api.Test;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+
+public class PetEndpointTests {
+
+    static {
+        RestAssured.baseURI = "https://petstore3.swagger.io/api/v3";
+    }
+
+    private String createPet(String name, String status) {
+        String petPayload = """
+            {
+                "name": "%s",
+                "status": "%s",
+                "photoUrls": ["https://example.com/photo.jpg"]
+            }
+        """.formatted(name, status);
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(petPayload)
+                .post("/pet");
+        response.then().statusCode(200).and().body("id", notNullValue());
+
+        return response.jsonPath().getString("id");
+    }
+
+    private void deletePet(String petId) {
+        given()
+                .delete("/pet/" + petId)
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    public void testUpdatePet_validInputs() {
+        // Arrange
+        String petId = createPet("doggie", "available");
+        String updatePayload = """
+            {
+                "id": %s,
+                "name": "updatedDoggie",
+                "status": "sold",
+                "photoUrls": ["https://example.com/updated_photo.jpg"]
+            }
+        """.formatted(petId);
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(updatePayload)
+                .put("/pet");
+
+        // Assert
+        response.then()
+                .statusCode(200)
+                .body("id", equalTo(Integer.parseInt(petId)))
+                .body("name", equalTo("updatedDoggie"))
+                .body("status", equalTo("sold"));
+
+        // Cleanup
+        deletePet(petId);
+    }
+
+    @Test
+    public void testUpdatePet_invalidId() {
+        // Arrange
+        String invalidPetId = "-1";
+        String updatePayload = """
+            {
+                "id": %s,
+                "name": "invalidDoggie",
+                "status": "available",
+                "photoUrls": ["https://example.com/photo.jpg"]
+            }
+        """.formatted(invalidPetId);
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(updatePayload)
+                .put("/pet");
+
+        // Assert
+        response.then()
+                .statusCode(400);
+    }
+
+    @Test
+    public void testUpdatePet_nullId() {
+        // Arrange
+        String updatePayload = """
+            {
+                "name": "nullDoggie",
+                "status": "available",
+                "photoUrls": ["https://example.com/photo.jpg"]
+            }
+        """;
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(updatePayload)
+                .put("/pet");
+
+        // Assert
+        response.then()
+                .statusCode(400);
+    }
+
+    @Test
+    public void testUpdatePet_emptyName() {
+        // Arrange
+        String petId = createPet("doggie", "available");
+        String updatePayload = """
+            {
+                "id": %s,
+                "name": "",
+                "status": "sold",
+                "photoUrls": ["https://example.com/empty_photo.jpg"]
+            }
+        """.formatted(petId);
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(updatePayload)
+                .put("/pet");
+
+        // Assert
+        response.then()
+                .statusCode(400);
+
+        // Cleanup
+        deletePet(petId);
+    }
+
+    @Test
+    public void testUpdatePet_missingName() {
+        // Arrange
+        String petId = createPet("doggie", "available");
+        String updatePayload = """
+            {
+                "id": %s,
+                "status": "pending",
+                "photoUrls": ["https://example.com/missing_photo.jpg"]
+            }
+        """.formatted(petId);
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(updatePayload)
+                .put("/pet");
+
+        // Assert
+        response.then()
+                .statusCode(400);
+
+        // Cleanup
+        deletePet(petId);
+    }
+
+    @Test
+    public void testUpdatePet_invalidStatus() {
+        // Arrange
+        String petId = createPet("doggie", "available");
+        String updatePayload = """
+            {
+                "id": %s,
+                "name": "doggie",
+                "status": "invalidStatus",
+                "photoUrls": ["https://example.com/photo.jpg"]
+            }
+        """.formatted(petId);
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(updatePayload)
+                .put("/pet");
+
+        // Assert
+        response.then()
+                .statusCode(400);
+
+        // Cleanup
+        deletePet(petId);
+    }
+
+    @Test
+    public void testUpdatePet_nullStatus() {
+        // Arrange
+        String petId = createPet("doggie", "available");
+        String updatePayload = """
+            {
+                "id": %s,
+                "name": "doggie",
+                "photoUrls": ["https://example.com/photo.jpg"]
+            }
+        """.formatted(petId);
+
+        // Act
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(updatePayload)
+                .put("/pet");
+
+        // Assert
+        response.then()
+                .statusCode(400);
+
+        // Cleanup
+        deletePet(petId);
+    }
+}
+```

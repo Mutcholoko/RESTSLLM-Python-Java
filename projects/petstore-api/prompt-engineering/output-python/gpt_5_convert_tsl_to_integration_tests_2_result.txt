@@ -1,0 +1,137 @@
+```python
+import pytest
+import requests
+import random
+
+BASE_URL = "https://petstore3.swagger.io/api/v3"
+
+@pytest.fixture
+def create_order():
+    def _create_order(pet_id, quantity=1, status="placed"):
+        payload = {
+            "id": random.randint(1, 100000),
+            "petId": pet_id,
+            "quantity": quantity,
+            "status": status,
+            "complete": True
+        }
+        response = requests.post(f"{BASE_URL}/store/order", json=payload)
+        assert response.status_code == 200, f"Failed to create order: {response.text}"
+        return response.json()
+    return _create_order
+
+
+@pytest.fixture
+def delete_order():
+    def _delete_order(order_id):
+        response = requests.delete(f"{BASE_URL}/store/order/{order_id}")
+        assert response.status_code == 200, f"Failed to delete order: {response.text}"
+    return _delete_order
+
+
+@pytest.fixture
+def create_pet():
+    def _create_pet(name, status="available"):
+        payload = {
+            "name": name,
+            "photoUrls": ["http://example.com/photo"],
+            "status": status,
+        }
+        response = requests.post(f"{BASE_URL}/pet", json=payload)
+        assert response.status_code == 200, f"Failed to create pet: {response.text}"
+        return response.json()
+    return _create_pet
+
+
+@pytest.fixture
+def delete_pet():
+    def _delete_pet(pet_id):
+        response = requests.delete(f"{BASE_URL}/pet/{pet_id}")
+        assert response.status_code == 200, f"Failed to delete pet: {response.text}"
+    return _delete_pet
+
+
+# Scenario 1: Get inventory
+def test_get_inventory():
+    response = requests.get(f"{BASE_URL}/store/inventory")
+    assert response.status_code == 200
+    assert isinstance(response.json(), dict)
+
+
+# Scenario 2: Place order with valid payload
+def test_place_order_with_valid_payload(create_pet, delete_pet, delete_order):
+    pet = create_pet(name="OrderPet")
+    payload = {
+        "id": random.randint(1, 100000),
+        "petId": pet["id"],
+        "quantity": 1,
+        "status": "placed",
+        "complete": True
+    }
+    response = requests.post(f"{BASE_URL}/store/order", json=payload)
+    assert response.status_code == 200
+    delete_order(response.json()["id"])
+    delete_pet(pet["id"])
+
+
+# Scenario 3: Place order with invalid payload
+def test_place_order_with_invalid_payload():
+    payload = {
+        "petId": "invalid_pet_id",
+        "quantity": "invalid_quantity",
+        "status": "unknown_status"
+    }
+    response = requests.post(f"{BASE_URL}/store/order", json=payload)
+    assert response.status_code == 400
+
+
+# Scenario 4: Get order by valid ID
+def test_get_order_by_valid_id(create_pet, delete_pet, create_order, delete_order):
+    pet = create_pet(name="GetOrderPet")
+    order = create_order(pet_id=pet["id"])
+    response = requests.get(f"{BASE_URL}/store/order/{order['id']}")
+    assert response.status_code == 200
+    assert response.json()["id"] == order["id"]
+    delete_order(order["id"])
+    delete_pet(pet["id"])
+
+
+# Scenario 5: Get order by invalid ID
+def test_get_order_by_invalid_id():
+    response = requests.get(f"{BASE_URL}/store/order/0")
+    assert response.status_code == 404
+
+
+# Scenario 6: Get order by boundary ID (valid)
+def test_get_order_by_boundary_id_valid(create_pet, delete_pet, create_order, delete_order):
+    pet = create_pet(name="BoundaryOrderPet")
+    order = create_order(pet_id=pet["id"])
+    response = requests.get(f"{BASE_URL}/store/order/{order['id']}")
+    assert response.status_code == 200
+    delete_order(order["id"])
+    delete_pet(pet["id"])
+
+
+# Scenario 7: Delete order with valid ID
+def test_delete_order_with_valid_id(create_pet, delete_pet, create_order, delete_order):
+    pet = create_pet(name="DeleteOrderPet")
+    order = create_order(pet_id=pet["id"])
+    response = requests.delete(f"{BASE_URL}/store/order/{order['id']}")
+    assert response.status_code == 200
+    delete_pet(pet["id"])
+
+
+# Scenario 8: Delete order with invalid ID
+def test_delete_order_with_invalid_id():
+    response = requests.delete(f"{BASE_URL}/store/order/0")
+    assert response.status_code == 404
+
+
+# Scenario 9: Delete order with boundary ID
+def test_delete_order_with_boundary_id(create_pet, delete_pet, create_order):
+    pet = create_pet(name="BoundaryDeleteOrderPet")
+    order = create_order(pet_id=pet["id"])
+    response = requests.delete(f"{BASE_URL}/store/order/{order['id']}")
+    assert response.status_code == 200
+    delete_pet(pet["id"])
+```

@@ -1,0 +1,72 @@
+import pytest
+import requests
+
+BASE_URL = "http://localhost:8000"  # Altere para o URL correto da sua API
+
+@pytest.fixture
+def create_author():
+    def _create_author(name):
+        response = requests.post(f"{BASE_URL}/authors", json={"name": name})
+        return response
+    return _create_author
+
+@pytest.fixture
+def create_and_get_author_id(create_author):
+    def _create_and_get_author_id(name):
+        response = create_author(name)
+        assert response.status_code == 200
+        return response.json()["id"]
+    return _create_and_get_author_id
+
+def test_list_authors():
+    response = requests.get(f"{BASE_URL}/authors")
+    assert response.status_code == 200
+
+@pytest.mark.parametrize("name, expected_status", [
+    ("ValidName", 200),
+    ("", 422),
+    ("x" * 255, 200),
+    ("x", 200),
+])
+def test_create_author(name, expected_status, create_author):
+    response = create_author(name)
+    assert response.status_code == expected_status
+
+@pytest.mark.parametrize("author_id, expected_status", [
+    (1, 200),  # Valid ID
+    (-1, 422),  # Negative ID
+    (0, 422),  # Zero ID
+    ("abc", 422),  # Non-integer ID
+])
+def test_get_author_by_id(author_id, expected_status, create_and_get_author_id):
+    if author_id == 1:
+        author_id = create_and_get_author_id("Valid Author")
+    response = requests.get(f"{BASE_URL}/authors/{author_id}")
+    assert response.status_code == expected_status
+
+@pytest.mark.parametrize("author_id, name, expected_status", [
+    (1, "UpdatedName", 200),
+    (1, "", 422),
+    (1, "x" * 255, 200),
+    (1, "x", 200),
+    (-1, "ValidName", 422),
+    (0, "ValidName", 422),
+    ("abc", "ValidName", 422),
+])
+def test_update_author(author_id, name, expected_status, create_and_get_author_id):
+    if author_id == 1:
+        author_id = create_and_get_author_id("Author to Update")
+    response = requests.patch(f"{BASE_URL}/authors/{author_id}", json={"name": name})
+    assert response.status_code == expected_status
+
+@pytest.mark.parametrize("author_id, expected_status", [
+    (1, 204),
+    (-1, 422),
+    (0, 422),
+    ("abc", 422),
+])
+def test_delete_author(author_id, expected_status, create_and_get_author_id):
+    if author_id == 1:
+        author_id = create_and_get_author_id("Author to Delete")
+    response = requests.delete(f"{BASE_URL}/authors/{author_id}")
+    assert response.status_code == expected_status

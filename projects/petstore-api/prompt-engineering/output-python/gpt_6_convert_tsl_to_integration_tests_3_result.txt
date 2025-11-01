@@ -1,0 +1,175 @@
+```python
+import pytest
+import requests
+import random
+import string
+
+BASE_URL = "https://petstore3.swagger.io/api/v3"
+
+def generate_random_username():
+    return "user_" + ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+
+@pytest.fixture
+def create_user():
+    def _create_user(username, email="test@example.com", password="password123"):
+        payload = {
+            "id": random.randint(1, 100000),
+            "username": username,
+            "firstName": "Test",
+            "lastName": "User",
+            "email": email,
+            "password": password,
+            "phone": "1234567890",
+            "userStatus": 1
+        }
+        response = requests.post(f"{BASE_URL}/user", json=payload)
+        assert response.status_code == 200, f"Failed to create user: {response.text}"
+        return payload
+    return _create_user
+
+
+@pytest.fixture
+def delete_user():
+    def _delete_user(username):
+        response = requests.delete(f"{BASE_URL}/user/{username}")
+        assert response.status_code == 200, f"Failed to delete user: {response.text}"
+    return _delete_user
+
+
+# Scenario 1: Create user with valid payload
+def test_create_user_with_valid_payload(delete_user):
+    username = generate_random_username()
+    payload = {
+        "id": random.randint(1, 100000),
+        "username": username,
+        "firstName": "Test",
+        "lastName": "User",
+        "email": "test@example.com",
+        "password": "password123",
+        "phone": "1234567890",
+        "userStatus": 1
+    }
+    response = requests.post(f"{BASE_URL}/user", json=payload)
+    assert response.status_code == 200
+    delete_user(username)
+
+
+# Scenario 2: Create user with missing required fields
+def test_create_user_with_missing_required_fields():
+    payload = {
+        "firstName": "Test",
+        "lastName": "User"
+    }
+    response = requests.post(f"{BASE_URL}/user", json=payload)
+    assert response.status_code == 400
+
+
+# Scenario 3: Create user with invalid payload
+def test_create_user_with_invalid_payload():
+    payload = {
+        "id": "invalid_id",
+        "username": 12345
+    }
+    response = requests.post(f"{BASE_URL}/user", json=payload)
+    assert response.status_code == 400
+
+
+# Scenario 4: Get user by valid username
+def test_get_user_by_valid_username(create_user, delete_user):
+    username = generate_random_username()
+    create_user(username)
+    response = requests.get(f"{BASE_URL}/user/{username}")
+    assert response.status_code == 200
+    assert response.json()["username"] == username
+    delete_user(username)
+
+
+# Scenario 5: Get user by invalid username
+def test_get_user_by_invalid_username():
+    response = requests.get(f"{BASE_URL}/user/invalid_username")
+    assert response.status_code == 404
+
+
+# Scenario 6: Update user with valid payload
+def test_update_user_with_valid_payload(create_user, delete_user):
+    username = generate_random_username()
+    create_user(username)
+    updated_payload = {
+        "id": random.randint(1, 100000),
+        "username": username,
+        "firstName": "Updated",
+        "lastName": "User",
+        "email": "updated@example.com",
+        "password": "newpassword123",
+        "phone": "9876543210",
+        "userStatus": 1
+    }
+    response = requests.put(f"{BASE_URL}/user/{username}", json=updated_payload)
+    assert response.status_code == 200
+    delete_user(username)
+
+
+# Scenario 7: Update user with invalid payload
+def test_update_user_with_invalid_payload(create_user, delete_user):
+    username = generate_random_username()
+    create_user(username)
+    updated_payload = {
+        "id": "invalid_id",
+        "username": username
+    }
+    response = requests.put(f"{BASE_URL}/user/{username}", json=updated_payload)
+    assert response.status_code == 400
+    delete_user(username)
+
+
+# Scenario 8: Update user with non-existent username
+def test_update_user_with_nonexistent_username():
+    updated_payload = {
+        "id": random.randint(1, 100000),
+        "username": "nonexistent_user",
+        "firstName": "Updated",
+        "lastName": "User",
+        "email": "updated@example.com",
+        "password": "newpassword123",
+        "phone": "9876543210",
+        "userStatus": 1
+    }
+    response = requests.put(f"{BASE_URL}/user/nonexistent_user", json=updated_payload)
+    assert response.status_code == 404
+
+
+# Scenario 9: Delete user with valid username
+def test_delete_user_with_valid_username(create_user):
+    username = generate_random_username()
+    create_user(username)
+    response = requests.delete(f"{BASE_URL}/user/{username}")
+    assert response.status_code == 200
+
+
+# Scenario 10: Delete user with invalid username
+def test_delete_user_with_invalid_username():
+    response = requests.delete(f"{BASE_URL}/user/invalid_username")
+    assert response.status_code == 404
+
+
+# Scenario 11: Login with valid credentials
+def test_login_with_valid_credentials(create_user, delete_user):
+    username = generate_random_username()
+    password = "password123"
+    create_user(username, password=password)
+    response = requests.get(f"{BASE_URL}/user/login", params={"username": username, "password": password})
+    assert response.status_code == 200
+    delete_user(username)
+
+
+# Scenario 12: Login with invalid credentials
+def test_login_with_invalid_credentials():
+    response = requests.get(f"{BASE_URL}/user/login", params={"username": "invalid_user", "password": "wrong_password"})
+    assert response.status_code == 400
+
+
+# Scenario 13: Logout user
+def test_logout_user():
+    response = requests.get(f"{BASE_URL}/user/logout")
+    assert response.status_code == 200
+```

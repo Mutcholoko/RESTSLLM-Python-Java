@@ -1,0 +1,188 @@
+```yaml
+name: Swagger Petstore - Test Specification
+categories:
+  - name: HTTP_Method
+    choices:
+      - PUT
+      - POST
+      - GET
+      - DELETE
+  - name: Endpoint
+    choices:
+      - /pet
+      - /pet/findByStatus
+      - /pet/findByTags
+      - /pet/{petId}
+      - /pet/{petId}/uploadImage
+      - /store/inventory
+      - /store/order
+      - /store/order/{orderId}
+      - /user
+      - /user/createWithList
+      - /user/login
+      - /user/logout
+      - /user/{username}
+  - name: Response_Status
+    choices:
+      - 200
+      - 400
+      - 404
+      - 422
+      - default
+  - name: Request_Body
+    choices:
+      - Valid_Payload
+      - Invalid_Payload
+      - Missing_Required_Fields
+      - Empty_Payload
+      - Large_Payload
+      - Boundary_Values
+    condition: HTTP_Method in ["PUT", "POST"]
+  - name: Path_Parameters
+    choices:
+      - Valid_ID
+      - Invalid_ID
+      - Missing_ID
+      - Boundary_ID
+    condition: Endpoint in ["/pet/{petId}", "/pet/{petId}/uploadImage", "/store/order/{orderId}", "/user/{username}"]
+  - name: Query_Parameters
+    choices:
+      - Valid_Parameters
+      - Invalid_Parameters
+      - Missing_Parameters
+      - Boundary_Parameters
+    condition: Endpoint in ["/pet/findByStatus", "/pet/findByTags", "/user/login", "/pet/{petId}", "/pet/{petId}/uploadImage"]
+  - name: Header_Parameters
+    choices:
+      - Valid_Header
+      - Invalid_Header
+      - Missing_Header
+    condition: Endpoint in ["/pet/{petId}", "/pet/{petId}/uploadImage", "/store/order/{orderId}"]
+
+constraints:
+  - if: HTTP_Method == "PUT"
+    then: Endpoint in ["/pet", "/user/{username}"]
+  - if: HTTP_Method == "POST"
+    then: Endpoint in ["/pet", "/store/order", "/user", "/user/createWithList", "/pet/{petId}/uploadImage"]
+  - if: HTTP_Method == "GET"
+    then: Endpoint in ["/pet/findByStatus", "/pet/findByTags", "/pet/{petId}", "/store/inventory", "/store/order/{orderId}", "/user/login", "/user/logout", "/user/{username}"]
+  - if: HTTP_Method == "DELETE"
+    then: Endpoint in ["/pet/{petId}", "/store/order/{orderId}", "/user/{username}"]
+
+test_cases:
+  - name: TestCase_1
+    combination:
+      HTTP_Method: PUT
+      Endpoint: /pet
+      Request_Body: Valid_Payload
+      Response_Status: 200
+  - name: TestCase_2
+    combination:
+      HTTP_Method: PUT
+      Endpoint: /pet
+      Request_Body: Invalid_Payload
+      Response_Status: 400
+  - name: TestCase_3
+    combination:
+      HTTP_Method: POST
+      Endpoint: /pet
+      Request_Body: Missing_Required_Fields
+      Response_Status: 422
+  - name: TestCase_4
+    combination:
+      HTTP_Method: GET
+      Endpoint: /pet/findByStatus
+      Query_Parameters: Valid_Parameters
+      Response_Status: 200
+  - name: TestCase_5
+    combination:
+      HTTP_Method: GET
+      Endpoint: /pet/findByStatus
+      Query_Parameters: Invalid_Parameters
+      Response_Status: 400
+  - name: TestCase_6
+    combination:
+      HTTP_Method: DELETE
+      Endpoint: /pet/{petId}
+      Path_Parameters: Valid_ID
+      Response_Status: 200
+  - name: TestCase_7
+    combination:
+      HTTP_Method: DELETE
+      Endpoint: /pet/{petId}
+      Path_Parameters: Invalid_ID
+      Response_Status: 400
+  - name: TestCase_8
+    combination:
+      HTTP_Method: POST
+      Endpoint: /pet/{petId}/uploadImage
+      Path_Parameters: Valid_ID
+      Request_Body: Valid_Payload
+      Response_Status: 200
+  - name: TestCase_9
+    combination:
+      HTTP_Method: POST
+      Endpoint: /pet/{petId}/uploadImage
+      Path_Parameters: Valid_ID
+      Request_Body: Empty_Payload
+      Response_Status: 400
+  - name: TestCase_10
+    combination:
+      HTTP_Method: GET
+      Endpoint: /store/inventory
+      Response_Status: 200
+  - name: TestCase_11
+    combination:
+      HTTP_Method: POST
+      Endpoint: /store/order
+      Request_Body: Valid_Payload
+      Response_Status: 200
+  - name: TestCase_12
+    combination:
+      HTTP_Method: GET
+      Endpoint: /store/order/{orderId}
+      Path_Parameters: Valid_ID
+      Response_Status: 200
+  - name: TestCase_13
+    combination:
+      HTTP_Method: GET
+      Endpoint: /store/order/{orderId}
+      Path_Parameters: Boundary_ID
+      Response_Status: 404
+  - name: TestCase_14
+    combination:
+      HTTP_Method: DELETE
+      Endpoint: /store/order/{orderId}
+      Path_Parameters: Valid_ID
+      Response_Status: 200
+  - name: TestCase_15
+    combination:
+      HTTP_Method: POST
+      Endpoint: /user
+      Request_Body: Valid_Payload
+      Response_Status: 200
+  - name: TestCase_16
+    combination:
+      HTTP_Method: GET
+      Endpoint: /user/login
+      Query_Parameters: Valid_Parameters
+      Response_Status: 200
+  - name: TestCase_17
+    combination:
+      HTTP_Method: GET
+      Endpoint: /user/login
+      Query_Parameters: Missing_Parameters
+      Response_Status: 400
+  - name: TestCase_18
+    combination:
+      HTTP_Method: DELETE
+      Endpoint: /user/{username}
+      Path_Parameters: Valid_ID
+      Response_Status: 200
+  - name: TestCase_19
+    combination:
+      HTTP_Method: DELETE
+      Endpoint: /user/{username}
+      Path_Parameters: Invalid_ID
+      Response_Status: 400
+```
